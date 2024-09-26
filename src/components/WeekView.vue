@@ -12,16 +12,17 @@
             @dragleave.prevent="onDragLeave(day)"
           >
             <Chip 
-              v-for="(meal, index) in day.meals" 
-              :key="meal.id" 
-              :label="meal.name" 
-              removable 
-              @remove="removeMeal(day, index)"
+            v-for="(meal, index) in day.meals" 
+            :key="meal.uniqueId || meal.id" 
+            :label="meal.name" 
+            removable 
+            @remove="removeMeal(day, index)"
             >
-              <template #content>
+            <template #content>
                 {{ meal.name }} (Protein: {{ meal.protein }}g, Calories: {{ meal.calories }})
-              </template>
+            </template>
             </Chip>
+
           </div>
           <div class="day-total">
             Total: Protein {{ dayTotal(day).protein }}g, Calories {{ dayTotal(day).calories }}
@@ -30,30 +31,27 @@
       </div>
     </div>
     <h3>Available Meals</h3>
-    <DataTable :value="meals" class="meal-list">
-      <Column field="name" header="Name">
-        <template #body="slotProps">
-          <div 
-            draggable="true" 
-            @dragstart="onDragStart($event, slotProps.data.id)"
-            class="draggable-meal"
-          >
-            {{ slotProps.data.name }}
+    <div class="available-meals-grid">
+      <div 
+        v-for="meal in meals" 
+        :key="meal.id" 
+        class="meal-item draggable-meal"
+        draggable="true"
+        @dragstart="onDragStart($event, meal.id)"
+        >
+        <div class="meal-content">
+          <div class="meal-name">{{ meal.name }}</div>
+          <div class="meal-details">
+            Protein: {{ meal.protein }}g, Calories: {{ meal.calories }}
           </div>
-        </template>
-      </Column>
-      <Column field="protein" header="Protein (g)"></Column>
-      <Column field="calories" header="Calories"></Column>
-      <Column header="Actions">
-        <template #body="slotProps">
-          <Button 
-            icon="pi pi-trash" 
-            class="p-button-rounded p-button-danger" 
-            @click="removeMealFromList(slotProps.data.id)" 
-          />
-        </template>
-      </Column>
-    </DataTable>
+        </div>
+        <Button 
+          icon="pi pi-trash" 
+          class="p-button-rounded p-button-danger p-button-sm delete-button" 
+          @click="removeMealFromList(meal.id)" 
+        />
+      </div>
+    </div>
 
     <AddMealForm @meal-added="addMealToList" />
 
@@ -65,8 +63,7 @@
 import AddMealForm from './AddMealForm.vue'
 import Panel from 'primevue/panel'
 import Chip from 'primevue/chip'
-import DataTable from 'primevue/datatable'
-import Column from 'primevue/column'
+
 import Button from 'primevue/button'
 
 export default {
@@ -75,8 +72,6 @@ export default {
     AddMealForm,
     Panel,
     Chip,
-    DataTable,
-    Column,
     Button
   },
   data() {
@@ -118,8 +113,23 @@ export default {
       localStorage.setItem('meals', JSON.stringify(this.meals))
     },
     onDragStart(event, mealId) {
-      event.dataTransfer.setData('mealId', mealId)
-    },
+  event.dataTransfer.setData('mealId', mealId)
+  
+  // Create a clone of the dragged element
+  const draggedEl = event.target.cloneNode(true)
+  draggedEl.style.opacity = '1'
+  draggedEl.style.position = 'absolute'
+  draggedEl.style.top = '-1000px'
+  document.body.appendChild(draggedEl)
+  
+  // Set the custom drag image
+  event.dataTransfer.setDragImage(draggedEl, 0, 0)
+  
+  // Remove the clone after a short delay
+  setTimeout(() => {
+    document.body.removeChild(draggedEl)
+  }, 0)
+},
     onDragEnter(day) {
       day.isDragOver = true
     },
@@ -127,14 +137,16 @@ export default {
       day.isDragOver = false
     },
     onDrop(event, day) {
-      day.isDragOver = false
-      const mealId = event.dataTransfer.getData('mealId')
-      const meal = this.findMealById(mealId)
-      if (meal) {
-        day.meals.push({ ...meal })
-        this.saveWeekData()
-      }
-    },
+        day.isDragOver = false
+        const mealId = event.dataTransfer.getData('mealId')
+        const meal = this.findMealById(mealId)
+        if (meal) {
+            const newMeal = { ...meal, uniqueId: Date.now() }
+            day.meals.push(newMeal)
+            this.saveWeekData()
+        }
+        },
+
     findMealById(id) {
       return this.meals.find(meal => meal.id === parseInt(id))
     },
@@ -146,9 +158,10 @@ export default {
       }, { protein: 0, calories: 0 })
     },
     removeMeal(day, index) {
-      day.meals.splice(index, 1)
-      this.saveWeekData()
-    },
+        day.meals.splice(index, 1)
+        this.saveWeekData()
+        },
+
     addMealToList(meal) {
       this.meals.push(meal)
       this.saveMeals()
@@ -182,7 +195,7 @@ export default {
   min-height: 100px;
   padding: 10px;
   margin-bottom: 10px;
-  border: 2px dashed #ccc;
+  border: 2px dashed #ced8e4;
   border-radius: 10px;
   transition: border-color 0.3s ease;
 }
@@ -216,5 +229,91 @@ export default {
 
 .draggable-meal:hover {
   background-color: #e0e0e0;
+}
+
+.p-chip {
+  background-color: #fff;
+  color: #495057;
+  border-radius: 16px;
+  padding: 0 0.5rem;
+  border: 1px solid #ededed;
+}
+
+
+.available-meals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.meal-item {
+  background-color: #fff;
+  border-radius: 6px;
+  padding: 0.75rem;
+  cursor: move;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  font-size: 0.9rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid #ededed;
+}
+
+.meal-item:hover {
+  background-color: #fff;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.meal-content {
+  flex-grow: 1;
+  margin-right: 0.5rem;
+}
+
+.meal-name {
+  font-weight: bold;
+  margin-bottom: 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meal-details {
+  font-size: 0.8rem;
+}
+
+.delete-button {
+  flex-shrink: 0;
+  scale: 0.8;
+}
+
+
+.meal-card {
+  background-color: #f0f0f0;
+  border-radius: 6px;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+}
+
+.meal-content {
+  flex-grow: 1;
+  margin-right: 0.5rem;
+}
+
+.meal-name {
+  font-weight: bold;
+  margin-bottom: 0.25rem;
+}
+
+.meal-details {
+  font-size: 0.8rem;
+}
+
+.delete-button {
+  flex-shrink: 0;
 }
 </style>
