@@ -2,7 +2,7 @@
   <div id="app">
     <Card>
       <template #title>
-        Road To Danny Lazzarin
+        Macro Tracker
       </template>
       <template #content>
         <WeekView />
