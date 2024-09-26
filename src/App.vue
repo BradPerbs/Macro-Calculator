@@ -19,6 +19,7 @@
 import WeekView from './components/WeekView.vue'
 import Card from 'primevue/card'
 import InputNumber from 'primevue/inputnumber'
+import './assets/main.css'
 
 export default {
   name: 'App',
@@ -34,16 +35,3 @@ export default {
   }
 }
 </script>
-
-<style>
-#app {
-  font-family: Arial, sans-serif;
-  max-width: 1600px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
-.protein-goal-input {
-  margin-bottom: 20px;
-}
-</style>

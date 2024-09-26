@@ -2,10 +2,10 @@
   <div class="add-meal-form">
     <h3>Add New Meal</h3>
     <form @submit.prevent="addMeal">
-      <InputText v-model="name" placeholder="Meal Name" required />
-      <InputNumber v-model="protein" placeholder="Protein (g)" :min="0" :step="1" required />
-      <InputNumber v-model="calories" placeholder="Calories" :min="0" :step="1" required />
-      <Button type="submit" label="Add Meal" />
+      <InputText v-model="name" placeholder="Meal Name" required class="p-inputtext-sm" />
+      <InputNumber v-model="protein" placeholder="Protein (g)" :min="0" :step="1" required class="p-inputtext-sm" />
+      <InputNumber v-model="calories" placeholder="Calories" :min="0" :step="1" required class="p-inputtext-sm" />
+      <Button type="submit" label="Add Meal" class="p-button-sm" />
     </form>
   </div>
 </template>
@@ -50,18 +50,3 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-.add-meal-form {
-  margin-bottom: 20px;
-}
-.add-meal-form :deep(.p-inputtext),
-.add-meal-form :deep(.p-inputnumber) {
-  margin-right: 10px;
-  margin-bottom: 10px;
-}
-
-.p-button{
-    vertical-align: initial !important;
-}
-</style>

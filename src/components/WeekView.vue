@@ -17,18 +17,19 @@
             @dragenter.prevent="onDragEnter(day)"
             @dragleave.prevent="onDragLeave(day)"
           >
-            <Chip 
-            v-for="(meal, index) in day.meals" 
-            :key="meal.uniqueId || meal.id" 
-            :label="meal.name" 
-            removable 
-            @remove="removeMeal(day, index)"
-            >
-            <template #content>
-                {{ meal.name }} (Protein: {{ meal.protein }}g, Calories: {{ meal.calories }})
-            </template>
-            </Chip>
-
+            <div v-for="(meal, index) in day.meals" :key="meal.uniqueId || meal.id" class="meal-card">
+              <div class="meal-content">
+                <div class="meal-name">{{ meal.name }}</div>
+                <div class="meal-details">
+                  Protein: {{ meal.protein }}g, Calories: {{ meal.calories }}
+                </div>
+              </div>
+              <Button 
+                icon="pi pi-trash" 
+                class="p-button-rounded p-button-danger p-button-sm delete-button" 
+                @click="removeMeal(day, index)" 
+              />
+            </div>
           </div>
           <div class="day-total">
             Total: Protein {{ dayTotal(day).protein }}g, Calories {{ dayTotal(day).calories }}
@@ -45,7 +46,7 @@
         class="meal-item draggable-meal"
         draggable="true"
         @dragstart="onDragStart($event, meal.id)"
-        >
+      >
         <div class="meal-content">
           <div class="meal-name">{{ meal.name }}</div>
           <div class="meal-details">
@@ -62,14 +63,13 @@
 
     <AddMealForm @meal-added="addMealToList" />
 
-    <Button label="Clear Week" icon="pi pi-trash" @click="clearWeek" class="p-button-danger mb-3" />
+    <Button label="Clear Week" icon="pi pi-trash" @click="clearWeek" class="p-button-danger p-button-sm" />
   </div>
 </template>
 
 <script>
 import AddMealForm from './AddMealForm.vue'
 import Panel from 'primevue/panel'
-import Chip from 'primevue/chip'
 import Button from 'primevue/button'
 
 export default {
@@ -77,13 +77,12 @@ export default {
   components: {
     AddMealForm,
     Panel,
-    Chip,
     Button
   },
   props: {
     proteinGoal: {
       type: Number,
-      default: 100
+      default: 120
     }
   },
   data() {
@@ -93,12 +92,10 @@ export default {
     }
   },
   mounted() {
-    // Add sample meals if there are no meals
     if (this.meals.length === 0) {
       this.addSampleMeals();
     }
     
-    // Add a sample meal to Monday if it's empty
     if (this.week[0].meals.length === 0) {
       this.addSampleMealToMonday();
     }
@@ -136,18 +133,12 @@ export default {
     },
     onDragStart(event, mealId) {
       event.dataTransfer.setData('mealId', mealId)
-      
-      // Create a clone of the dragged element
       const draggedEl = event.target.cloneNode(true)
       draggedEl.style.opacity = '1'
       draggedEl.style.position = 'absolute'
       draggedEl.style.top = '-1000px'
       document.body.appendChild(draggedEl)
-      
-      // Set the custom drag image
       event.dataTransfer.setDragImage(draggedEl, 0, 0)
-      
-      // Remove the clone after a short delay
       setTimeout(() => {
         document.body.removeChild(draggedEl)
       }, 0)
@@ -221,171 +212,3 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-.week-view {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 10px;
-  margin-bottom: 20px;
-  overflow-x: auto;
-}
-
-.day {
-  flex: 0 0 calc(100% / 7 - 10px);
-  min-width: 200px;
-}
-
-.drop-zone {
-  min-height: 100px;
-  padding: 10px;
-  margin-bottom: 10px;
-  border: 2px dashed #ced8e4;
-  border-radius: 10px;
-  transition: border-color 0.3s ease;
-}
-
-.drop-zone.drag-over {
-  border: 2px dashed #7ca3ff;
-  padding:5px;
-}
-
-.day-total {
-  font-weight: bold;
-  margin-top: 10px;
-}
-
-.goal-indicator {
-  color: #4caf50;
-  margin-left: 10px;
-}
-
-.meal-list {
-  margin-top: 20px;
-}
-
-:deep(.p-chip) {
-  margin-right: 5px;
-  margin-bottom: 5px;
-}
-
-.draggable-meal {
-  cursor: move;
-  padding: 10px;
-  background-color: #f0f0f0;
-  border-radius: 4px;
-  display: inline-block;
-}
-
-.draggable-meal:hover {
-  background-color: #e0e0e0;
-}
-
-.p-chip {
-  background-color: #fff;
-  color: #495057;
-  border-radius: 16px;
-  padding: 0 0.5rem;
-  border: 1px solid #ededed;
-}
-
-.available-meals-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 0.75rem;
-  margin-top: 1rem;
-}
-
-.meal-item {
-  background-color: #fff;
-  border-radius: 15px;
-  padding: 0.75rem;
-  cursor: move;
-  transition: background-color 0.3s ease, box-shadow 0.3s ease;
-  font-size: 0.9rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border: 1px solid #ededed;
-}
-
-.meal-item:hover {
-  background-color: #fff;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-
-.meal-content {
-  flex-grow: 1;
-  margin-right: 0.5rem;
-}
-
-.meal-name {
-  font-weight: bold;
-  margin-bottom: 0.25rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.meal-details {
-  font-size: 0.8rem;
-}
-
-.delete-button {
-  flex-shrink: 0;
-  scale: 0.8;
-}
-
-.meal-card {
-  background-color: #f0f0f0;
-  border-radius: 6px;
-  padding: 0.75rem;
-  margin-bottom: 0.5rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.9rem;
-}
-
-.meal-content {
-  flex-grow: 1;
-  margin-right: 0.5rem;
-}
-
-.meal-name {
-  font-weight: bold;
-  margin-bottom: 0.25rem;
-}
-
-.meal-details {
-  font-size: 0.8rem;
-}
-
-.delete-button {
-  flex-shrink: 0;
-}
-
-:deep(.goal-reached .p-panel-header) {
-  background-color: #4caf50;
-  color: white;
-}
-
-:deep(.current-day .p-panel-header) {
-  background-color: #2196f3;
-  color: white;
-}
-
-:deep(.current-day.goal-reached .p-panel-header) {
-  background-color: #4caf50;
-  color: white;
-}
-
-.p-panel .p-panel-header {
-  padding: 1rem;
-  background: #f8f9fa;
-    background-color: rgb(248, 249, 250);
-  color: #495057;
-  border-top-right-radius: 15px !important;
-  border-top-left-radius: 15px !important;
-}
-</style>
