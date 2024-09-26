@@ -2,7 +2,13 @@
   <div>
     <div class="week-view">
       <div v-for="day in week" :key="day.date" class="day">
-        <Panel :header="day.name">
+        <Panel 
+          :header="day.name" 
+          :class="{ 
+            'goal-reached': isDailyGoalReached(day), 
+            'current-day': isCurrentDay(day)
+          }"
+        >
           <div 
             class="drop-zone"
             :class="{ 'drag-over': day.isDragOver }"
@@ -26,6 +32,7 @@
           </div>
           <div class="day-total">
             Total: Protein {{ dayTotal(day).protein }}g, Calories {{ dayTotal(day).calories }}
+            <span v-if="isDailyGoalReached(day)" class="goal-indicator">🎉 Goal Reached!</span>
           </div>
         </Panel>
       </div>
@@ -63,7 +70,6 @@
 import AddMealForm from './AddMealForm.vue'
 import Panel from 'primevue/panel'
 import Chip from 'primevue/chip'
-
 import Button from 'primevue/button'
 
 export default {
@@ -74,18 +80,34 @@ export default {
     Chip,
     Button
   },
+  props: {
+    proteinGoal: {
+      type: Number,
+      default: 100
+    }
+  },
   data() {
     return {
       week: this.loadWeekData(),
       meals: this.loadMeals()
     }
   },
+  mounted() {
+    // Add sample meals if there are no meals
+    if (this.meals.length === 0) {
+      this.addSampleMeals();
+    }
+    
+    // Add a sample meal to Monday if it's empty
+    if (this.week[0].meals.length === 0) {
+      this.addSampleMealToMonday();
+    }
+  },
   methods: {
     clearWeek() {
-    this.week = this.week.map(day => ({ ...day, meals: [] }));
-    this.saveWeekData();
+      this.week = this.week.map(day => ({ ...day, meals: [] }));
+      this.saveWeekData();
     },
-
     loadWeekData() {
       const savedWeek = localStorage.getItem('weekData')
       if (savedWeek) {
@@ -113,23 +135,23 @@ export default {
       localStorage.setItem('meals', JSON.stringify(this.meals))
     },
     onDragStart(event, mealId) {
-  event.dataTransfer.setData('mealId', mealId)
-  
-  // Create a clone of the dragged element
-  const draggedEl = event.target.cloneNode(true)
-  draggedEl.style.opacity = '1'
-  draggedEl.style.position = 'absolute'
-  draggedEl.style.top = '-1000px'
-  document.body.appendChild(draggedEl)
-  
-  // Set the custom drag image
-  event.dataTransfer.setDragImage(draggedEl, 0, 0)
-  
-  // Remove the clone after a short delay
-  setTimeout(() => {
-    document.body.removeChild(draggedEl)
-  }, 0)
-},
+      event.dataTransfer.setData('mealId', mealId)
+      
+      // Create a clone of the dragged element
+      const draggedEl = event.target.cloneNode(true)
+      draggedEl.style.opacity = '1'
+      draggedEl.style.position = 'absolute'
+      draggedEl.style.top = '-1000px'
+      document.body.appendChild(draggedEl)
+      
+      // Set the custom drag image
+      event.dataTransfer.setDragImage(draggedEl, 0, 0)
+      
+      // Remove the clone after a short delay
+      setTimeout(() => {
+        document.body.removeChild(draggedEl)
+      }, 0)
+    },
     onDragEnter(day) {
       day.isDragOver = true
     },
@@ -137,16 +159,15 @@ export default {
       day.isDragOver = false
     },
     onDrop(event, day) {
-        day.isDragOver = false
-        const mealId = event.dataTransfer.getData('mealId')
-        const meal = this.findMealById(mealId)
-        if (meal) {
-            const newMeal = { ...meal, uniqueId: Date.now() }
-            day.meals.push(newMeal)
-            this.saveWeekData()
-        }
-        },
-
+      day.isDragOver = false
+      const mealId = event.dataTransfer.getData('mealId')
+      const meal = this.findMealById(mealId)
+      if (meal) {
+        const newMeal = { ...meal, uniqueId: Date.now() }
+        day.meals.push(newMeal)
+        this.saveWeekData()
+      }
+    },
     findMealById(id) {
       return this.meals.find(meal => meal.id === parseInt(id))
     },
@@ -158,10 +179,9 @@ export default {
       }, { protein: 0, calories: 0 })
     },
     removeMeal(day, index) {
-        day.meals.splice(index, 1)
-        this.saveWeekData()
-        },
-
+      day.meals.splice(index, 1)
+      this.saveWeekData()
+    },
     addMealToList(meal) {
       this.meals.push(meal)
       this.saveMeals()
@@ -172,6 +192,31 @@ export default {
         this.meals.splice(index, 1)
         this.saveMeals()
       }
+    },
+    isDailyGoalReached(day) {
+      return this.dayTotal(day).protein >= this.proteinGoal
+    },
+    addSampleMeals() {
+      const sampleMeals = [
+        { id: 1, name: 'Chicken Breast', protein: 31, calories: 165 },
+        { id: 2, name: 'Greek Yogurt', protein: 17, calories: 100 },
+        { id: 3, name: 'Protein Shake', protein: 25, calories: 120 },
+        { id: 4, name: 'Salmon Fillet', protein: 22, calories: 206 },
+        { id: 5, name: 'Egg Whites', protein: 26, calories: 126 }
+      ];
+      this.meals = sampleMeals;
+      this.saveMeals();
+    },
+    addSampleMealToMonday() {
+      const mondayMeal = { ...this.meals[0], uniqueId: Date.now() };
+      this.week[0].meals.push(mondayMeal);
+      this.saveWeekData();
+    },
+    isCurrentDay(day) {
+      const today = new Date();
+      const dayOfWeek = today.getDay();
+      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      return day.name === dayNames[dayOfWeek];
     }
   }
 }
@@ -210,6 +255,11 @@ export default {
   margin-top: 10px;
 }
 
+.goal-indicator {
+  color: #4caf50;
+  margin-left: 10px;
+}
+
 .meal-list {
   margin-top: 20px;
 }
@@ -239,7 +289,6 @@ export default {
   border: 1px solid #ededed;
 }
 
-
 .available-meals-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -249,7 +298,7 @@ export default {
 
 .meal-item {
   background-color: #fff;
-  border-radius: 6px;
+  border-radius: 15px;
   padding: 0.75rem;
   cursor: move;
   transition: background-color 0.3s ease, box-shadow 0.3s ease;
@@ -287,7 +336,6 @@ export default {
   scale: 0.8;
 }
 
-
 .meal-card {
   background-color: #f0f0f0;
   border-radius: 6px;
@@ -315,5 +363,29 @@ export default {
 
 .delete-button {
   flex-shrink: 0;
+}
+
+:deep(.goal-reached .p-panel-header) {
+  background-color: #4caf50;
+  color: white;
+}
+
+:deep(.current-day .p-panel-header) {
+  background-color: #2196f3;
+  color: white;
+}
+
+:deep(.current-day.goal-reached .p-panel-header) {
+  background-color: #4caf50;
+  color: white;
+}
+
+.p-panel .p-panel-header {
+  padding: 1rem;
+  background: #f8f9fa;
+    background-color: rgb(248, 249, 250);
+  color: #495057;
+  border-top-right-radius: 15px !important;
+  border-top-left-radius: 15px !important;
 }
 </style>
