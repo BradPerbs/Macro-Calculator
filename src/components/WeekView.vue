@@ -92,13 +92,6 @@ export default {
     }
   },
   mounted() {
-    if (this.meals.length === 0) {
-      this.addSampleMeals();
-    }
-    
-    if (this.week[0].meals.length === 0) {
-      this.addSampleMealToMonday();
-    }
   },
   methods: {
     clearWeek() {
