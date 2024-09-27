@@ -33,7 +33,7 @@
           </div>
           <div class="day-total">
             Total: Protein {{ dayTotal(day).protein }}g, Calories {{ dayTotal(day).calories }}
-            <span v-if="isDailyGoalReached(day)" class="goal-indicator">🎉 Goal Reached!</span>
+            <span v-if="isDailyGoalReached(day)" class="goal-indicator"><br/>Goal Reached! 🎉</span>
           </div>
         </Panel>
       </div>
