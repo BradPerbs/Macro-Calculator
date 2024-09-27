@@ -97,7 +97,7 @@ button {
 
 .available-meals-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(4, minmax(200px, auto));
   gap: 0.75rem;
   margin-top: 1rem;
 }
@@ -149,7 +149,7 @@ button {
   border-radius: 10px;
   padding: 0.75rem;
   margin-bottom: 0.5rem;
-  display: flex;
+  display: block;
   justify-content: space-between;
   align-items: center;
   font-size: 0.9rem;
@@ -223,7 +223,7 @@ button {
   }
 
   .available-meals-grid {
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    grid-template-columns: repeat(4, minmax(200px, auto));
   }
 }
 
